@@ -1,1 +1,0 @@
-cc -fPIC -g -c -Wall liqua.c && cc -shared -Wl,-soname,liqua.so -o liqua.so liqua.o
