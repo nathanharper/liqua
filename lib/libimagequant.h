@@ -52,10 +52,6 @@ LIQ_EXPORT liq_attr* liq_attr_create_with_allocator(void* (*malloc)(size_t), voi
 LIQ_EXPORT liq_attr* liq_attr_copy(liq_attr *orig);
 LIQ_EXPORT void liq_attr_destroy(liq_attr *attr);
 
-/* I added these... --NH */
-LIQ_EXPORT size_t liq_attr_get_size(void);
-LIQ_EXPORT size_t liq_image_get_size(void);
-
 LIQ_EXPORT liq_error liq_set_max_colors(liq_attr* attr, int colors);
 LIQ_EXPORT liq_error liq_set_speed(liq_attr* attr, int speed);
 LIQ_EXPORT liq_error liq_set_min_opacity(liq_attr* attr, int min);

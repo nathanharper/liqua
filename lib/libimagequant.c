@@ -1421,13 +1421,3 @@ LIQ_EXPORT liq_error liq_write_remapped_image_rows(liq_result *quant, liq_image 
 
     return LIQ_OK;
 }
-
-LIQ_EXPORT size_t liq_attr_get_size()
-{
-    return sizeof(liq_attr);
-}
-
-LIQ_EXPORT size_t liq_image_get_size()
-{
-    return sizeof(liq_image);
-}
