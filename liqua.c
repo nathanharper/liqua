@@ -145,6 +145,22 @@ static int liqua_write_remapped_image(lua_State *L)
     return 0;
 }
 
+static int liqua_set_dithering_level(lua_State *L)
+{
+    liq_result **result = checkresult(L);
+    float f = luaL_checknumber(L, 2);
+    switch(liq_set_dithering_level(*result, f)) {
+        case LIQ_OK:
+            break;
+        case LIQ_VALUE_OUT_OF_RANGE:
+            return liqua_push_error(L, "Dither value out of range. Must be between 0 and 1 (inclusive).");
+        default:
+            return liqua_push_error(L,"Something went wrong while setting dither level, but I don't know what?");
+    }
+    return 0;
+}
+liq_error liq_set_dithering_level(liq_result *res, float dither_level);
+
 int liqua_push_error(lua_State *L, const char[] msg)
 {
     lua_pushnil(L);
