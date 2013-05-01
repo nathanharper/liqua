@@ -54,28 +54,28 @@ static int liqua_result_destroy(lua_State *L)
 static int liqua_attr_tostring(lua_State *L)
 {
     liq_attr **a = checkattr(L);
-    lua_pushfstring(L, "<liqua attribute: %p>", *a);
+    lua_pushfstring(L, "liqua attribute: (%p)", *a);
     return 1;
 }
 
 static int liqua_image_tostring(lua_State *L)
 {
     liq_image **i = checkimage(L);
-    lua_pushfstring(L, "<liqua image: %p>", *i);
+    lua_pushfstring(L, "liqua image: (%p)", *i);
     return 1;
 }
 
 static int liqua_result_tostring(lua_State *L)
 {
     liq_result **r = checkresult(L);
-    lua_pushfstring(L, "<liqua result: %p>", *r);
+    lua_pushfstring(L, "liqua result: (%p)", *r);
     return 1;
 }
 
 static int liqua_palette_tostring(lua_State *L)
 {
     liq_palette **p = checkpalette(L);
-    lua_pushfstring(L, "<liqua palette: %p>", *p);
+    lua_pushfstring(L, "liqua palette: (%p)", *p);
     return 1;
 }
 
@@ -194,8 +194,8 @@ static int liqua_write_remapped_image(lua_State *L)
     int width = liq_image_get_width(*image);
     int height = liq_image_get_height(*image);
     void *buffer = malloc(width * height * sizeof(char));
-    // TODO: handle errors differently
-    // The buffer size: I guess this works?
+
+    /* TODO: Is this the right buffer size? */
     switch(liq_write_remapped_image(*result, *image, buffer, width * height * sizeof(char))) {
         case LIQ_OK:
             break;
@@ -230,7 +230,6 @@ static int liqua_set_dithering_level(lua_State *L)
 {
     liq_result **result = checkresult(L);
     float f = luaL_checknumber(L, 2);
-    // TODO: handle errors differently
     switch(liq_set_dithering_level(*result, f)) {
         case LIQ_OK:
             break;
@@ -285,8 +284,8 @@ static const struct luaL_Reg liqua_attr [] = {
 
 static const struct luaL_Reg liqua_image [] = {
     {"destroy", liqua_image_destroy},
-    {"get_width", liqua_image_get_width},
-    {"get_height", liqua_image_get_height},
+    {"width", liqua_image_get_width},
+    {"height", liqua_image_get_height},
     {"__tostring", liqua_image_tostring},
     {NULL, NULL}
 };
