@@ -111,7 +111,7 @@ static int liqua_image_create_rgba(lua_State *L)
     luaL_checktype(L, 2, LUA_TTABLE);
     int length = luaL_len(L, 2);
     int i,j;
-    int **bitmap = (int **)calloc(length, sizeof(int) * 4);
+    int **bitmap = (int **)malloc(sizeof(int *) * length);
     lua_pushnil(L);
     i=0;
     while (lua_next(L, 2)) {
@@ -121,8 +121,9 @@ static int liqua_image_create_rgba(lua_State *L)
             lua_pushstring(L, "Invalid RGBA pixel.");
             return 2;
         }
-        lua_pushnil(L);
         j=0;
+        bitmap[i] = (int *)malloc(sizeof(int) * 4);
+        lua_pushnil(L);
         while(lua_next(L, -2)) {
             bitmap[i][j++] = luaL_checkint(L, -1);
             lua_pop(L, 1);

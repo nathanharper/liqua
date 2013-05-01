@@ -25,9 +25,12 @@ if not err then
 
     if not err then
       data,err = result:write_remapped_image(image, bitmap)
-      print(data,err)
+      -- print(data,err)
 
       if not err then
+        local file = io.open("image.png", 'wb')
+        file:write(data)
+        file:close()
         palette,err = result:get_palette()
         print(palette,err)
       end
