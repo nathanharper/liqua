@@ -53,29 +53,29 @@ static int liqua_result_destroy(lua_State *L)
 
 static int liqua_attr_tostring(lua_State *L)
 {
-    luaL_checkudata(L, 1, "liqua.attr");
-    lua_pushstring(L, "<liqua attribute>");
+    liq_attr **a = checkattr(L);
+    lua_pushfstring(L, "<liqua attribute: %p>", *a);
     return 1;
 }
 
 static int liqua_image_tostring(lua_State *L)
 {
-    luaL_checkudata(L, 1, "liqua.image");
-    lua_pushstring(L, "<liqua image>");
+    liq_image **i = checkimage(L);
+    lua_pushfstring(L, "<liqua image: %p>", *i);
     return 1;
 }
 
 static int liqua_result_tostring(lua_State *L)
 {
-    luaL_checkudata(L, 1, "liqua.result");
-    lua_pushstring(L, "<liqua result>");
+    liq_result **r = checkresult(L);
+    lua_pushfstring(L, "<liqua result: %p>", *r);
     return 1;
 }
 
 static int liqua_palette_tostring(lua_State *L)
 {
-    luaL_checkudata(L, 1, "liqua.palette");
-    lua_pushstring(L, "<liqua palette>");
+    liq_palette **p = checkpalette(L);
+    lua_pushfstring(L, "<liqua palette: %p>", *p);
     return 1;
 }
 
@@ -88,8 +88,11 @@ static int liqua_palette_tostring(lua_State *L)
 static int liqua_attr_create(lua_State *L)
 {
     liq_attr *attr;
-    if ((attr = liq_attr_create()) == NULL)
-        return liqua_push_error(L, "Failed to initialize liqua attribute.");
+    if ((attr = liq_attr_create()) == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Failed to initialize liqua attribute.");
+        return 2;
+    }
     liq_attr **ud = (liq_attr **)lua_newuserdata(L, sizeof(attr));
     *ud = attr;
     luaL_getmetatable(L, "liqua.attr");
@@ -113,8 +116,11 @@ static int liqua_image_create_rgba(lua_State *L)
     i=0;
     while (lua_next(L, 2)) {
         luaL_checktype(L, -1, LUA_TTABLE);
-        if(luaL_len(L, -1) != 4)
-            return liqua_push_error(L, "Invalid RGBA pixel.");
+        if(luaL_len(L, -1) != 4) {
+            lua_pushnil(L);
+            lua_pushstring(L, "Invalid RGBA pixel.");
+            return 2;
+        }
         lua_pushnil(L);
         j=0;
         while(lua_next(L, -2)) {
@@ -126,8 +132,11 @@ static int liqua_image_create_rgba(lua_State *L)
     }
 
     liq_image *image;
-    if ((image = liq_image_create_rgba(*attr, bitmap, w, h, gamma)) == NULL)
-        return liqua_push_error(L, "Failed to create RGBA image.");
+    if ((image = liq_image_create_rgba(*attr, bitmap, w, h, gamma)) == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Failed to create RGBA image.");
+        return 2;
+    }
 
     liq_image **ud = (liq_image **)lua_newuserdata(L, sizeof(image));
     *ud = image;
@@ -139,10 +148,13 @@ static int liqua_image_create_rgba(lua_State *L)
 static int liqua_quantize_image(lua_State *L)
 {
     liq_attr **attr = checkattr(L);
-    liq_image **image = (liq_image **)luaL_checkudata(L, 2);
+    liq_image **image = (liq_image **)luaL_checkudata(L, 2, "liqua.image");
     liq_result *result;
-    if ((result = liq_quantize_image(*attr, *image)) == NULL)
-        return liqua_push_error(L, "Image quantization failed.");
+    if ((result = liq_quantize_image(*attr, *image)) == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Image quantization failed.");
+        return 2;
+    }
     liq_result **ud = (liq_result **)lua_newuserdata(L, sizeof(result));
     *ud = result;
     luaL_getmetatable(L, "liqua.result");
@@ -161,9 +173,11 @@ static int liqua_set_quality(lua_State *L)
         case LIQ_OK:
             break;
         case LIQ_VALUE_OUT_OF_RANGE:
-            return liqua_push_error(L, "Quality values out of range.");
+            lua_pushstring(L, "Quality values out of range.");
+            return 1;
         default:
-            return liqua_push_error(L, "Something really bad but vague happened.");
+            lua_pushstring(L, "Something really bad but vague happened.");
+            return 1;
     }
     return 0;
 }
@@ -175,17 +189,40 @@ static int liqua_set_quality(lua_State *L)
 static int liqua_write_remapped_image(lua_State *L)
 {
     liq_result **result = checkresult(L);
-    liq_image **image = (liq_image **)luaL_checkudata(L, 2);
+    liq_image **image = (liq_image **)luaL_checkudata(L, 2, "liqua.image");
+    int width = liq_image_get_width(*image);
+    int height = liq_image_get_height(*image);
+    void *buffer = malloc(width * height * sizeof(char));
     // TODO: handle errors differently
-    switch(liq_write_remapped_image(*result, *image, buffer, buffer_size)) {
+    // The buffer size: I guess this works?
+    switch(liq_write_remapped_image(*result, *image, buffer, width * height * sizeof(char))) {
         case LIQ_OK:
             break;
         case LIQ_BUFFER_TOO_SMALL:
-            return liqua_push_error(L,"Buffer too small to write image.");
+            lua_pushstring(L, "Buffer too small to write image.");
+            return 1;
         default:
-            return liqua_push_error(L,"Something went wrong while writing image but I don't know what?");
+            lua_pushstring(L, "Something went wrong while writing image but I don't know what?");
+            return 1;
     }
-    return 0;
+    lua_pushstring(L, buffer);
+    return 1;
+}
+
+static liqua_image_get_width(lua_State *L)
+{
+    const liq_image **image = (const liq_image **)luaL_checkudata(L, 1, "liqua.image");
+    int width = liq_image_get_width(*image);
+    lua_pushinteger(L, width);
+    return 1;
+}
+
+static liqua_image_get_height(lua_State *L)
+{
+    const liq_image **image = (const liq_image **)luaL_checkudata(L, 1, "liqua.image");
+    int height = liq_image_get_height(*image);
+    lua_pushinteger(L, height);
+    return 1;
 }
 
 static int liqua_set_dithering_level(lua_State *L)
@@ -197,9 +234,11 @@ static int liqua_set_dithering_level(lua_State *L)
         case LIQ_OK:
             break;
         case LIQ_VALUE_OUT_OF_RANGE:
-            return liqua_push_error(L, "Dither value out of range. Must be between 0 and 1 (inclusive).");
+            lua_pushstring(L, "Dither value out of range. Must be between 0 and 1 (inclusive).");
+            return 1;
         default:
-            return liqua_push_error(L,"Something went wrong while setting dither level, but I don't know what?");
+            lua_pushstring(L, "Something went wrong while setting dither level, but I don't know what?");
+            return 1;
     }
     return 0;
 }
@@ -208,21 +247,17 @@ static int liqua_get_palette(lua_State *L)
 {
     /* TODO: need a way to free the palette memory */
     liq_result **res = checkresult(L);
-    const *liq_palette;
-    if ((palette = liq_get_palette(*res)) == NULL)
-        return liqua_push_error(L, "Could not retrieve palette.");
+    const liq_palette *palette;
+    if ((palette = liq_get_palette(*res)) == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Could not retrieve palette.");
+        return 2;
+    }
     liq_palette **ud = (liq_palette **)lua_newuserdata(L, sizeof(palette));
     *ud = palette;
     luaL_getmetatable(L, "liqua.palette");
     lua_setmetatable(L, -2);
     return 1;
-}
-
-int liqua_push_error(lua_State *L, const char[] msg)
-{
-    lua_pushnil(L);
-    lua_pushstring(L, msg);
-    return 2;
 }
 
 
@@ -233,6 +268,7 @@ int liqua_push_error(lua_State *L, const char[] msg)
 
 static const struct luaL_Reg liqua [] = {
     {"attr_create", liqua_attr_create},
+    {"set_quality", liqua_set_quality},
     {NULL, NULL}
 };
 
@@ -246,6 +282,8 @@ static const struct luaL_Reg liqua_attr [] = {
 
 static const struct luaL_Reg liqua_image [] = {
     {"destroy", liqua_image_destroy},
+    {"get_width", liqua_image_get_width},
+    {"get_height", liqua_image_get_height},
     {"__tostring", liqua_image_tostring},
     {NULL, NULL}
 };
@@ -255,6 +293,7 @@ static const struct luaL_Reg liqua_result [] = {
     {"get_palette", liqua_get_palette},
     {"__tostring", liqua_result_tostring},
     {"write_remapped_image", liqua_write_remapped_image},
+    {"set_dithering_level", liqua_set_dithering_level},
     {NULL, NULL}
 };
 

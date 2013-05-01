@@ -1,3 +1,7 @@
+-- liqua.c:212:8: warning: return type defaults to ‘int’ [-Wreturn-type]
+-- liqua.c:220:8: warning: return type defaults to ‘int’ [-Wreturn-type]
+-- liqua.c: In function ‘liqua_get_palette’:
+-- liqua.c:257:9: warning: assignment discards ‘const’ qualifier from pointer target type [enabled by default]
 liq = require "liqua"
 
 local pixels = {
@@ -17,7 +21,8 @@ print(image,err)
 result,err = attr:quantize_image(image)
 print(result,err)
 
-print(result:write_remapped_image(image, bitmap))
+data,err = result:write_remapped_image(image, bitmap)
+print(data,err)
 
 palette,err = result:get_palette()
 print(palette,err)
