@@ -209,7 +209,7 @@ static int liqua_write_remapped_image(lua_State *L)
     return 1;
 }
 
-static liqua_image_get_width(lua_State *L)
+static int liqua_image_get_width(lua_State *L)
 {
     const liq_image **image = (const liq_image **)luaL_checkudata(L, 1, "liqua.image");
     int width = liq_image_get_width(*image);
@@ -217,7 +217,7 @@ static liqua_image_get_width(lua_State *L)
     return 1;
 }
 
-static liqua_image_get_height(lua_State *L)
+static int liqua_image_get_height(lua_State *L)
 {
     const liq_image **image = (const liq_image **)luaL_checkudata(L, 1, "liqua.image");
     int height = liq_image_get_height(*image);
@@ -253,8 +253,10 @@ static int liqua_get_palette(lua_State *L)
         lua_pushstring(L, "Could not retrieve palette.");
         return 2;
     }
+    liq_palette *palette_copy;
+    memcpy(&palette, &palette_copy, sizeof(palette));
     liq_palette **ud = (liq_palette **)lua_newuserdata(L, sizeof(palette));
-    *ud = palette;
+    *ud = palette_copy;
     luaL_getmetatable(L, "liqua.palette");
     lua_setmetatable(L, -2);
     return 1;
